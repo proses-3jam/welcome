@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Image Showcase</title>
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      background-color: #f4f4f4;
+    }
+
+    .image-container {
+      width: 100%;
+      max-width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0 auto;
+      background-color: #fff;
+    }
+
+    .img-wrapper {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .img-wrapper a {
+      width: 100%;
+      display: block;
+    }
+
+    .img-wrapper img {
+      width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 768px) {
+      .image-container {
+        max-width: 450px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+    }
+  </style>
+
+  <!-- SCRIPT PELACAKAN GCLID & WHATSAPP -->
+    <script>
+    (function(){
+        // 1. Tangkap Parameter URL Google Ads & Simpan ke LocalStorage
+        function getParam(name){
+            name = name.replace(/[\[]/,"\\[").replace(/[\]]/,"\\]");
+            var regex = new RegExp("[\\?&]"+name+"=([^&#]*)"),
+                results = regex.exec(window.location.search);
+            return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g," "));
+        }
+
+        var params = ["gclid","gbraid","wbraid","campaignid","adgroupid","keyword","matchtype"];
+        for(var i=0; i<params.length; i++){
+            var val = getParam(params[i]);
+            if(val){
+                try { localStorage.setItem(params[i], val); } catch(e) {}
+            }
+        }
+
+        function getSavedParam(name){
+            try { return localStorage.getItem(name) || getParam(name) || ""; } 
+            catch(e) { return getParam(name) || ""; }
+        }
+
+        // 2. Ambil IP & Lokasi (Non-blocking / Asinkron)
+        var userIp = "-";
+        var userLokasi = "-";
+        try {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "https://get.geojs.io/v1/ip/geo.json", true);
+            xhr.onreadystatechange = function(){
+                if(xhr.readyState === 4 && xhr.status === 200){
+                    try {
+                        var res = JSON.parse(xhr.responseText);
+                        userIp = res.ip || "-";
+                        userLokasi = (res.city ? res.city + ", " : "") + (res.region || "-");
+                    } catch(e) {}
+                }
+            };
+            xhr.send();
+        } catch(err) {}
+
+        // Flag Anti Double-Click
+        var isProcessing = false;
+
+        // 3. Deteksi Klik Tombol WhatsApp
+        document.addEventListener("click", function(e){
+            var link = e.target || e.srcElement;
+            while(link && link.tagName !== "A"){
+                link = link.parentNode;
+            }
+            if(!link || !link.href) return;
+            
+            // Filter khusus link WhatsApp
+            if(link.href.indexOf("api.whatsapp.com") === -1 && link.href.indexOf("wa.me") === -1){
+                return;
+            }
+            
+            e.preventDefault();
+
+            // Mencegah pemicuan ganda dalam kurun waktu 2 detik
+            if(isProcessing) return;
+            isProcessing = true;
+            setTimeout(function(){ isProcessing = false; }, 2000);
+            
+            var targetHref = link.href;
+            var ua = navigator.userAgent;
+            var now = new Date();
+            
+            // Click ID unik untuk setiap event klik
+            var clickId = "CLK-" + now.getTime() + "-" + Math.floor(Math.random() * 1000);
+            
+            // Kode Diskon unik per pengunjung (konsisten)
+            var kodeDiskon = "-";
+            try {
+                kodeDiskon = localStorage.getItem("my_promo_code");
+                if(!kodeDiskon){
+                    var day = ("0" + now.getDate()).slice(-2);
+                    var month = ("0" + (now.getMonth() + 1)).slice(-2);
+                    var random3 = Math.floor(Math.random() * 900) + 100;
+                    kodeDiskon = "PROMO" + day + month + "-" + random3;
+                    localStorage.setItem("my_promo_code", kodeDiskon);
+                }
+            } catch(err) {
+                kodeDiskon = "PROMO" + ("0" + now.getDate()).slice(-2) + ("0" + (now.getMonth() + 1)).slice(-2) + "-" + (Math.floor(Math.random() * 900) + 100);
+            }
+            
+            // Sisipkan Kode Diskon ke Pesan Teks WA
+            var tambahanTeks = encodeURIComponent(" kode *" + kodeDiskon + "*");
+            if(targetHref.toLowerCase().indexOf("text=") > -1){
+                targetHref = targetHref.replace(/(text=[^&]*)/i, "$1" + tambahanTeks);
+            } else if(targetHref.indexOf("?") > -1){
+                targetHref = targetHref + "&text=" + tambahanTeks;
+            } else {
+                targetHref = targetHref + "?text=" + tambahanTeks;
+            }
+            
+            // Informasi Perangkat & Waktu
+            var perangkatSpesifik = "Unknown";
+            try {
+                var uaMatch = ua.match(/\(([^)]+)\)/);
+                perangkatSpesifik = (uaMatch ? uaMatch[1] : "Generic") + " / Res: " + (window.screen.width + "x" + window.screen.height);
+            } catch(err) {}
+            
+            var tz = "-";
+            try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch(e) {}
+            
+            var waktuWIB = now.toLocaleString();
+            try {
+                waktuWIB = now.toLocaleString("en-GB", { 
+                    timeZone: "Asia/Jakarta", 
+                    year: "numeric", month: "2-digit", day: "2-digit", 
+                    hour: "2-digit", minute: "2-digit", second: "2-digit", 
+                    hour12: false 
+                }).replace(",", "") + " WIB";
+            } catch(e) {}
+            
+            // Struktur Payload Data
+            var data = {
+                clickId: clickId,
+                waktu: waktuWIB,
+                gclid: getSavedParam("gclid"),
+                gbraid: getSavedParam("gbraid"),
+                wbraid: getSavedParam("wbraid"),
+                campaignId: getSavedParam("campaignid"),
+                adGroupId: getSavedParam("adgroupid"),
+                keyword: getSavedParam("keyword"),
+                matchType: getSavedParam("matchtype"),
+                device: /Mobi/i.test(ua) ? "Mobile" : "Desktop",
+                modelDevice: /iPhone/.test(ua) ? "iPhone" : (/Android/.test(ua) ? "Android Device" : "Desktop/Generic"),
+                browser: /Chrome/.test(ua) ? "Chrome" : (/Safari/.test(ua) ? "Safari" : (/Firefox/.test(ua) ? "Firefox" : "Other")),
+                os: navigator.platform || "Unknown",
+                screen: (window.screen ? window.screen.width + "x" + window.screen.height : "-"),
+                bahasa: navigator.language || navigator.userLanguage || "-",
+                timezone: tz,
+                landingPage: window.location.href,
+                referrer: document.referrer || "Direct",
+                nomorWA: targetHref,
+                userAgent: ua,
+                status: "Klik WhatsApp",
+                catatan: "Konversi",
+                ipAddress: userIp,
+                lokasi: userLokasi,
+                perangkatBrowser: ua,
+                kodeDiskon: kodeDiskon,
+                perangkatSpesifik: perangkatSpesifik
+            };
+            
+            var queryParts = [];
+            for(var key in data){
+                if(data.hasOwnProperty(key)){
+                    queryParts.push(encodeURIComponent(key) + "=" + encodeURIComponent(data[key]));
+                }
+            }
+            
+            // URL Webhook Google Apps Script - GANTI DI BAWAH INI
+            var webhookUrl = "https://script.google.com/macros/s/AKfycbx1pA5wxQVWe4zIduQzSTRis9j-mGTa5HLvCxhLLjSP4NMwRfoeA1Ypqu3EYidR_57q/exec";
+            var finalUrl = webhookUrl + "?" + queryParts.join("&");
+            
+            // Transmisi Data Instan Tanpa Menahan Navigasi
+            try {
+                if (window.fetch) {
+                    fetch(finalUrl, { method: 'GET', mode: 'no-cors' });
+                } else {
+                    var beacon = new Image();
+                    beacon.src = finalUrl;
+                }
+            } catch(err) {
+                var beacon = new Image();
+                beacon.src = finalUrl;
+            }
+            
+            // Pengalihan Langsung ke WA di Tab Baru
+            try {
+                var newTab = window.open(targetHref, '_blank');
+                if(!newTab){
+                    window.location.href = targetHref;
+                }
+            } catch(err) {
+                window.location.href = targetHref;
+            }
+            
+        }, false);
+    })();
+    </script>
+</head>
+<body>
+
+  <div class="image-container">
+    <div class="img-wrapper"><a href="https://api.whatsapp.com/send/?phone=%2B6282277790619&text=Saya+mau+pesan+obatnya&type=phone_number&app_absent=0" onclick="trackClick()"><img src="img/1.png" alt="Image 1"></a></div>
+    <div class="img-wrapper"><a href="https://api.whatsapp.com/send/?phone=%2B6282277790619&text=Saya+mau+pesan+obatnya&type=phone_number&app_absent=0" onclick="trackClick()"><img src="img/2.png" alt="Image 2"></a></div>
+    <div class="img-wrapper"><a href="https://api.whatsapp.com/send/?phone=%2B6282277790619&text=Saya+mau+pesan+obatnya&type=phone_number&app_absent=0" onclick="trackClick()"><img src="img/3.png" alt="Image 3"></a></div>
+    <div class="img-wrapper"><a href="https://api.whatsapp.com/send/?phone=%2B6282277790619&text=Saya+mau+pesan+obatnya&type=phone_number&app_absent=0" onclick="trackClick()"><img src="img/4.jpeg" alt="Image 4"></a></div>
+    <div class="img-wrapper"><a href="https://api.whatsapp.com/send/?phone=%2B6282277790619&text=Saya+mau+pesan+obatnya&type=phone_number&app_absent=0" onclick="trackClick()"><img src="img/5.png" alt="Image 5"></a></div>
+    <div class="img-wrapper"><a href="https://api.whatsapp.com/send/?phone=%2B6282277790619&text=Saya+mau+pesan+obatnya&type=phone_number&app_absent=0" onclick="trackClick()"><img src="img/6.png" alt="Image 6"></a></div>
+    <div class="img-wrapper"><a href="https://api.whatsapp.com/send/?phone=%2B6282277790619&text=Saya+mau+pesan+obatnya&type=phone_number&app_absent=0" onclick="trackClick()"><img src="img/7.jpeg" alt="Image 7"></a></div>
+  </div>
+
+</body>
+</html>
